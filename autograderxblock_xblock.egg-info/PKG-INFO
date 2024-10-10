@@ -1,0 +1,6 @@
+Metadata-Version: 2.1
+Name: autograderxblock-xblock
+Version: 0.1
+Summary: autograderxblock XBlock
+License: UNKNOWN
+Requires-Dist: XBlock

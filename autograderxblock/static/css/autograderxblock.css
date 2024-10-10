@@ -1,0 +1,9 @@
+/* CSS for AutograderXBlock */
+
+.autograderxblock_block .count {
+    font-weight: bold;
+}
+
+.autograderxblock_block p {
+    cursor: pointer;
+}

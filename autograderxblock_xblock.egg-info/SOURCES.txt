@@ -1,0 +1,13 @@
+setup.py
+autograderxblock/__init__.py
+autograderxblock/autograderxblock.py
+autograderxblock/static/README.txt
+autograderxblock/static/css/autograderxblock.css
+autograderxblock/static/html/autograderxblock.html
+autograderxblock/static/js/src/autograderxblock.js
+autograderxblock_xblock.egg-info/PKG-INFO
+autograderxblock_xblock.egg-info/SOURCES.txt
+autograderxblock_xblock.egg-info/dependency_links.txt
+autograderxblock_xblock.egg-info/entry_points.txt
+autograderxblock_xblock.egg-info/requires.txt
+autograderxblock_xblock.egg-info/top_level.txt
