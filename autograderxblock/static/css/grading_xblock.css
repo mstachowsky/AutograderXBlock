@@ -1,0 +1,84 @@
+/* Grading XBlock Styles */
+
+/* Common styles for both Studio and Student views */
+.xblock-studio,
+.xblock-student {
+    font-family: Arial, sans-serif;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+h3 {
+    margin-top: 10px;
+    font-size: 1.2em;
+}
+
+textarea {
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid #ccc;
+    padding: 8px;
+    font-size: 14px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+input[type="text"],
+input[type="number"] {
+    padding: 6px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    display: block;
+    width: calc(100% - 12px);
+}
+
+button {
+    padding: 8px 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Rubric Editor in Studio view */
+#rubric-editor {
+    margin-bottom: 20px;
+}
+
+.rubric-item {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.rubric-label,
+.rubric-description,
+.rubric-weight {
+    margin-right: 10px;
+    flex: 1;
+}
+
+.rubric-weight {
+    max-width: 80px;
+}
+
+/* Evaluation result for students */
+#evaluation {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #eef;
+    border: 1px solid #aac;
+    border-radius: 4px;
+    font-style: italic;
+}
