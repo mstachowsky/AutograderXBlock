@@ -1,21 +1,31 @@
 function GradingXBlockStudio(runtime, element) {
     var $element = $(element);
 
+    // Initialize sortable to enable drag-and-drop
+    $element.find('#rubric-editor').sortable();
+
     var addItemBtn = $element.find('#add-rubric-item');
 
+    // Add new rubric item
     addItemBtn.on('click', function() {
-        // Create a new rubric item
         var newIndex = $element.find('.rubric-item').length;
         var newItemHtml = `
             <div class="rubric-item" data-index="${newIndex}">
                 <input type="text" class="rubric-label" placeholder="Label" />
                 <input type="text" class="rubric-description" placeholder="Description" />
                 <input type="number" class="rubric-weight" placeholder="Weight" />
+                <button class="delete-rubric-item">Delete</button>
             </div>
         `;
         $element.find('#rubric-editor').append(newItemHtml);
     });
 
+    // Handle rubric item deletion
+    $element.on('click', '.delete-rubric-item', function() {
+        $(this).closest('.rubric-item').remove();
+    });
+
+    // Handle save button click
     $element.find('.save-button').on('click', function() {
         var rubricItems = [];
         $element.find('.rubric-item').each(function(index, elem) {
@@ -38,6 +48,7 @@ function GradingXBlockStudio(runtime, element) {
         });
     });
 }
+
 
 function GradingXBlockStudent(runtime, element) {
     var $element = $(element);
