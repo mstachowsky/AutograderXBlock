@@ -1,15 +1,17 @@
 <div class="xblock-studio">
-    <h3>Enter Question Description: {{ self.question_description }}</h3>
+    <h3>Enter Question Description:</h3>
     <textarea id="question_description">{{ self.question_description }}</textarea>
-<div>
     
-	Random thing is {{ self.count }}
-</div>
- <div>
-	rubric is: {{ self.rubric }}
- </div>
-	<button class="save-button">Save</button>
-	<button id="add-rubric-item">Add rubric</button>
-	
-	
+    <div id="rubric-editor">
+        {% for item in self.rubric %}
+        <div class="rubric-item" data-index="{{ forloop.counter0 }}">
+            <label>Label: <input type="text" class="rubric-label" value="{{ item.label }}" /></label>
+            <label>Explanation: <input type="text" class="rubric-description" value="{{ item.description }}" /></label>
+            <label>Weight: <input type="number" class="rubric-weight" value="{{ item.weight }}" /></label>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <button class="save-button">Save</button>
+    <button id="add-rubric-item">Add rubric item</button>
 </div>
