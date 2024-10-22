@@ -5,9 +5,10 @@
     <div id="rubric-editor" class="sortable">
         {% for item in self.rubric %}
         <div class="rubric-item" data-index="{{ forloop.counter0 }}">
+			<div class="rubric-handle">☰</div>
             <label>Label: <input type="text" class="rubric-label" value="{{ item.label }}" /></label>
-            <label>Explanation: <input type="text" class="rubric-description" value="{{ item.description }}" /></label>
-            <label>Weight: <input type="number" class="rubric-weight" value="{{ item.weight }}" /></label>
+            <label>Explanation: <textarea class="rubric-description">{{ item.description }}</textarea></label>
+            <label>Weight: <input type="number" class="rubric-weight" value="{{ item.weight }}" step="0.5" /></label>
             <button class="delete-rubric-item">Delete</button>
         </div>
         {% endfor %}

@@ -47,6 +47,27 @@ button {
     margin-top: 10px;
 }
 
+.custom-submit-button {
+    padding: 8px 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.custom-submit-button:hover {
+    background-color: #45a049;
+}
+
+.custom-submit-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    color: #666;
+}
+
 button:hover {
     background-color: #45a049;
 }
@@ -55,11 +76,15 @@ button:hover {
 #rubric-editor {
     margin-bottom: 20px;
 }
-
 .rubric-item {
     margin-bottom: 15px;
+    padding: 10px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;  /* Align items to the top */
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    position: relative;
 }
 
 .rubric-label,
@@ -69,8 +94,38 @@ button:hover {
     flex: 1;
 }
 
-.rubric-weight {
-    max-width: 80px;
+/* Allow textboxes to be resizable */
+.rubric-label input,
+.rubric-description input {
+    resize: vertical;  /* Allow vertical resizing */
+    min-height: 30px;  /* Set a minimum height */
+    width: 100%;  /* Take full width of the container */
+    box-sizing: border-box;  /* Ensure padding is accounted for */
+}
+
+/* Adjust the handle placement to avoid overlap */
+.rubric-handle {
+    background-color: #ddd;
+    width: 20px;
+    height: 100%;
+    cursor: move;
+    position: absolute;
+    left: -25px;  /* Move the handle further to the left */
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+/* Shift inputs and other content to the right to avoid overlap */
+.rubric-item > * {
+    padding-left: 35px;  /* Increase left padding to make room for the handle */
+}
+
+.rubric-item .delete-rubric-item {
+    margin-left: 10px;
 }
 
 /* Evaluation result for students */
@@ -81,4 +136,21 @@ button:hover {
     border: 1px solid #aac;
     border-radius: 4px;
     font-style: italic;
+}
+
+#evaluation {
+    margin: 15px 0;
+}
+
+#evaluation .label {
+    margin-bottom: 10px;
+}
+
+#evaluation .feedback {
+    line-height: 1.4;
+}
+
+#evaluation strong {
+    color: #333;
+    margin-right: 5px;
 }

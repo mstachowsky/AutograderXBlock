@@ -58,9 +58,19 @@ function GradingXBlockStudent(runtime, element) {
             'student_answer': $element.find('#student_answer').val()
         };
         var handlerUrl = runtime.handlerUrl(element, 'grade_submission');
-        $.post(handlerUrl, JSON.stringify(data)).done(function(response) {
-            $element.find('#evaluation').text(response.evaluation);
-            // Update grade display here if needed
-        });
+		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+			// Parse the evaluation string to extract label and feedback
+			let evalString = response.evaluation;
+			// Extract content from tags using regex
+			let labelMatch = evalString.match(/<label>([\s\S]*?)<\/label>/);
+			let feedbackMatch = evalString.match(/<feedback>([\s\S]*?)<\/feedback>/);
+			
+			// Get the content or empty string if not found
+			let label = labelMatch ? labelMatch[1].trim() : '';
+			let feedback = feedbackMatch ? feedbackMatch[1].trim() : '';
+			// Update the DOM with formatted content
+			$element.find('#evaluation .label').html('<strong>Label:</strong> ' + label);
+			$element.find('#evaluation .feedback').html('<strong>Feedback:</strong> ' + feedback);
+		});
     });
 }

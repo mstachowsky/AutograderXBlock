@@ -11,6 +11,7 @@ import os
 import requests
 import json
 import traceback
+import re
 #from openai import OpenAI #TODO: ADD THIS TO REQUIREMENTS FOR XBLOCK!!
 
 #Endpoints
@@ -200,9 +201,11 @@ class AutograderXBlock(XBlock):
         
         prompt = f"""You are helping to evaluate student work. The question you are evaluating is: {self.question_description}
         
-        The rubric you are evaluating the work against is: {rubric_string}.
+        The rubric you are evaluating the work against is: {rubric_string}. Your job is to evaluate the student work against the rubric. You will provide a label and some feedback. It is imperative that your feedback does not contain the answer! Rather than explicitly telling the student exactly what they need to do, you should generate a small set of questions that the student can consider. Be careful to make sure that your questions don't give away the answer either - it is not OK to just rephrase the answer as a question! Remember, if they meet all of the expectations, you don't need to ask for anything else. They've done everything they had to do.
         
-        You must produce two things: a label and a feedback string. The label must be exactly one of the labels supplied by the rubric. You must provide your label within <label> and </label> XML tags. The feedback must be based on the student answer and the label you chose. You must provide your feedback within <feedback> and </feedback> XML tags. You must not produce any other output. The student work is:
+        You must produce two things: a label and a feedback string. The label must be exactly one of the labels supplied by the rubric. You must provide your label within <label> and </label> XML tags. The feedback must be based on the student answer and the label you chose. You must provide your feedback within <feedback> and </feedback> XML tags. 
+        
+        You must not produce any other output. The student work is:
         
         {student_answer}
         
@@ -210,12 +213,27 @@ class AutograderXBlock(XBlock):
 
         # Call the external evaluation function
         evaluation_string = text_text_eval(document_text=student_answer, prompt_text=prompt, model='qwen', max_length=1024)
-        grade = 100
-        print(evaluation_string)
-
-        # Call grade computation function
-        #grade = compute_grade(evaluation_string, [item['weight'] for item in rubric])
-
+        
+        #extract the label
+        label_match = re.search(r"<label>(.*?)</label>", evaluation_string)
+        if label_match:
+            label = label_match.group(1).strip().lower()  # Extract and convert to lower case
+        else:
+            # If no label is found, set a default grade or handle the error as needed
+            # I strongly doubt this can happen unless the LLM goes off the rails?
+            grade = 0
+            return {
+                "evaluation": "Hm, something went wrong. Here's what the evaluator says: " + evaluation_string,
+                "grade": grade
+            }
+            
+        # Match the extracted label with the rubric
+        grade = 0
+        for rubric_item in rubric:
+            if rubric_item['label'].lower() == label:
+                grade = rubric_item['weight']
+                break
+        
         # Save the student's grade
         self.runtime.publish(self, 'grade', {
             'value': grade,
@@ -226,6 +244,7 @@ class AutograderXBlock(XBlock):
             "evaluation": evaluation_string,
             "grade": grade
         }
+        
 
     def format_rubric_for_grading(self, rubric):
         # Format the rubric as needed for your external evaluation
