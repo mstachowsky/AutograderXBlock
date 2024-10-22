@@ -68,6 +68,33 @@ def phi_moe_api_text_text_endpoint(document_text: str, prompt_text: str, max_len
 
     return response_json
 
+def qwen_api_text_text_endpoint(document_text: str, prompt_text: str, max_length: int) -> str:
+    """
+    Sends a request to the API endpoint and returns the response.
+
+    Args:
+        document_text (str): The document text to be processed.
+        prompt_text (str): The prompt text to be used for processing.
+        max_length (int): Maximum length of the generated text.
+
+    Returns:
+        str: The generated text from the API.
+    """
+    url = "http://ece-nebula04.eng.uwaterloo.ca:8000/generate"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "prompt": f"{prompt_text}\n{document_text}",
+        "max_length": max_length
+    }
+    
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    response.raise_for_status()  # Raise an exception for HTTP errors
+    
+    # Parse the JSON response
+    response_json = response.json()['response']
+    #generated_text = response_json.get("response", "").strip()
+
+    return response_json
 #Aggregates
 def text_text_eval(document_text:str,prompt_text: str,model: str = "nemo",max_length:int = 512,api_key = None) -> str:
     """
@@ -83,18 +110,15 @@ def text_text_eval(document_text:str,prompt_text: str,model: str = "nemo",max_le
     Returns:
         str: The generated text from the selected API.
     """
-    if model == "phi":
-        return phi_moe_api_text_text_endpoint(document_text,prompt_text,max_length)
-    else:
-        return nebula_api_text_text_endpoint(document_text,prompt_text,max_length)
-    """
     if model == "gpt-4o-mini" or model == "gpt-4o":
         return openAI_text_text_endpoint(document_text,prompt_text,max_length=max_length,model=model,api_key = api_key)
     elif model == "phi":
         return phi_moe_api_text_text_endpoint(document_text,prompt_text,max_length)
+    elif model == "qwen":
+        return qwen_api_text_text_endpoint(document_text,prompt_text,max_length)
     else:
         return nebula_api_text_text_endpoint(document_text,prompt_text,max_length)
-    """
+
 class AutograderXBlock(XBlock):
         
     #question_description = String(default="Enter the question description here", scope=Scope.settings)
@@ -185,7 +209,7 @@ class AutograderXBlock(XBlock):
         """
 
         # Call the external evaluation function
-        evaluation_string = text_text_eval(document_text=student_answer, prompt_text=prompt, model='nemo', max_length=1024)
+        evaluation_string = text_text_eval(document_text=student_answer, prompt_text=prompt, model='qwen', max_length=1024)
         grade = 100
         print(evaluation_string)
 
