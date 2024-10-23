@@ -145,6 +145,18 @@ class AutograderXBlock(XBlock):
         scope=Scope.content,
         help="Editable rubric with labels and weights"
     )
+    
+    @property
+    def has_score(self):
+        return True
+
+    @property
+    def max_score(self):
+        """Return the maximum score based on the highest weight in the rubric."""
+        if self.rubric:
+            return max(item['weight'] for item in self.rubric)
+        return 0  # Default to 0 if no rubric is defined
+    
     def render_template(self, template_path, context={}):
         template_str = self.resource_string(template_path)
         template = Template(template_str)
