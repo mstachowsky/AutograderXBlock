@@ -59,8 +59,10 @@ function GradingXBlockStudent(runtime, element) {
         };
         var handlerUrl = runtime.handlerUrl(element, 'grade_submission');
 		$.post(handlerUrl, JSON.stringify(data)).done(function(response) {
+			console.log(data)
 			// Parse the evaluation string to extract label and feedback
 			let evalString = response.evaluation;
+			console.log(response)
 			// Extract content from tags using regex
 			let labelMatch = evalString.match(/<label>([\s\S]*?)<\/label>/);
 			let feedbackMatch = evalString.match(/<feedback>([\s\S]*?)<\/feedback>/);

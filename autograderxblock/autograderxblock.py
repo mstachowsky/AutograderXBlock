@@ -4,7 +4,8 @@ from importlib.resources import files
 import pkg_resources
 from web_fragments.fragment import Fragment
 from xblock.core import XBlock
-from xblock.fields import Integer, Scope, String, List
+from xblock.scorable import ScorableXBlockMixin, Score
+from xblock.fields import Integer, Scope, String, List, Float
 from django.template import Context, Template
 
 import os
@@ -120,7 +121,7 @@ def text_text_eval(document_text:str,prompt_text: str,model: str = "nemo",max_le
     else:
         return nebula_api_text_text_endpoint(document_text,prompt_text,max_length)
 
-class AutograderXBlock(XBlock):
+class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
         
     #question_description = String(default="Enter the question description here", scope=Scope.settings)
     question_description = String(
@@ -128,10 +129,25 @@ class AutograderXBlock(XBlock):
         default="",
         scope=Scope.content
     )
-     # TO-DO: delete count, and define your own fields.
-    count = Integer(
-        default=34, scope=Scope.content,
-        help="A simple counter, to show something happening",
+    
+    # TO-DO: delete count, and define your own fields.
+    
+    raw_earned = Float(
+        default=0, scope=Scope.user_state,
+        help="The student score, currently an integer",
+    )
+    student_score = Float(
+        default=0, scope=Scope.user_state,
+        help="The student score, currently an integer",
+    )
+    
+    raw_possible = Float(
+        default=1, scope=Scope.content,
+        help="The student max score, currently an integer",
+    )
+    student_attempts = Integer(
+        default = 0, scope = Scope.user_state,
+        help="The number of attempts the student has made at this question",
     )
 
     """
@@ -150,12 +166,38 @@ class AutograderXBlock(XBlock):
     def has_score(self):
         return True
 
-    @property
     def max_score(self):
         """Return the maximum score based on the highest weight in the rubric."""
         if self.rubric:
             return max(item['weight'] for item in self.rubric)
         return 0  # Default to 0 if no rubric is defined
+    
+    def has_submitted_answer(self):
+        return self.student_attempts > 0
+    
+    def set_score(self, score):
+        self.student_score = self.raw_earned
+    
+    def calculate_score(self):
+        return Score(raw_earned=self.raw_earned, raw_possible=self.raw_possible)
+    
+    def publish_grade(self, score=None, only_if_higher=None):
+        """
+        Publish a grade to the runtime.
+        """
+        if not score:
+            score = self.get_score()
+ 
+        grade_dict = {
+            "value": score.raw_earned,
+            "user": self.runtime.user_id,
+            "max_value": score.raw_possible,
+            "only_if_higher": only_if_higher,
+        }
+        self.runtime.publish(self, "grade", grade_dict)
+    
+    def get_score(self):
+        return Score(raw_earned=self.student_score, raw_possible=self.raw_possible)
     
     def render_template(self, template_path, context={}):
         template_str = self.resource_string(template_path)
@@ -168,7 +210,7 @@ class AutograderXBlock(XBlock):
         return data.decode("utf8")
     
     def studio_view(self, context):
-        html = self.render_template("static/html/grading_xblock_studio.html",{'self':self,"question":self.question_description,'random_thing':self.count})
+        html = self.render_template("static/html/grading_xblock_studio.html",{'self':self,"question":self.question_description})
         frag = Fragment()
         frag.add_content(html)
         #frag = Fragment(html.format(self=self,question=self.question_description,random_thing=34))
@@ -185,6 +227,7 @@ class AutograderXBlock(XBlock):
         
         self.question_description = data.get("question_description", "")
         self.rubric = data.get("rubric", [])
+        self.raw_possible = self.max_score() #update this here
         return {"result": "success"}
 
     def student_view(self, context):
@@ -219,13 +262,12 @@ class AutograderXBlock(XBlock):
         
         You must not produce any other output. The student work is:
         
-        {student_answer}
         
         """
 
         # Call the external evaluation function
         evaluation_string = text_text_eval(document_text=student_answer, prompt_text=prompt, model='qwen', max_length=1024)
-        
+        print("============================="+evaluation_string)
         #extract the label
         label_match = re.search(r"<label>(.*?)</label>", evaluation_string)
         if label_match:
@@ -235,8 +277,7 @@ class AutograderXBlock(XBlock):
             # I strongly doubt this can happen unless the LLM goes off the rails?
             grade = 0
             return {
-                "evaluation": "Hm, something went wrong. Here's what the evaluator says: " + evaluation_string,
-                "grade": grade
+                "evaluation": "Hm, something went wrong. Here's what the evaluator says: " + evaluation_string
             }
             
         # Match the extracted label with the rubric
@@ -247,14 +288,16 @@ class AutograderXBlock(XBlock):
                 break
         
         # Save the student's grade
-        self.runtime.publish(self, 'grade', {
-            'value': grade,
-            'max_value': 100,
-        })
-
+        #self.runtime.publish(self, 'grade', {
+        #    'value': grade,
+        #    'max_value': 100,
+        #})
+            
+        self.raw_earned = grade #set the student's grade
+        self.student_score = grade
+        self.publish_grade()
         return {
-            "evaluation": evaluation_string,
-            "grade": grade
+            "evaluation": "GOAT!" + evaluation_string
         }
         
 
