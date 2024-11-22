@@ -14,6 +14,14 @@
         {% endfor %}
     </div>
     
+	<div>
+		<label for="model_name">Select Model:</label>
+		<select id="model_name">
+			{% for model in model_names %}
+			<option value="{{ model }}" {% if model == self.model_name %}selected{% endif %}>{{ model }}</option>
+			{% endfor %}
+		</select>
+	<div>
     <button class="save-button">Save</button>
     <button id="add-rubric-item">Add rubric item</button>
 </div>

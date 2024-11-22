@@ -38,7 +38,8 @@ function GradingXBlockStudio(runtime, element) {
 
         var data = {
             'question_description': $element.find('#question_description').val(),
-            'rubric': rubricItems
+            'rubric': rubricItems,
+			'model_name': $element.find('#model_name').val() // Add model_name to the data
         };
 
         runtime.notify('save', {state: 'start'});

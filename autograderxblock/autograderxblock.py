@@ -1,78 +1,60 @@
 """TO-DO: Write a description of what this XBlock is."""
 
-from importlib.resources import files
+#from importlib.resources import files
 import pkg_resources
 from web_fragments.fragment import Fragment
 from xblock.core import XBlock
 from xblock.scorable import ScorableXBlockMixin, Score
 from xblock.fields import Integer, Scope, String, List, Float
 from django.template import Context, Template
+from requests.exceptions import Timeout
 
 import os
 import requests
 import json
 import traceback
 import re
+
+#from openai import OpenAI
+
+from lms.djangoapps.courseware.courses import get_course_by_id
+
 #from openai import OpenAI #TODO: ADD THIS TO REQUIREMENTS FOR XBLOCK!!
 
 #Endpoints
-def nebula_api_text_text_endpoint(document_text: str, prompt_text: str, max_length: int) -> str:
+def nebula_api_text_text_endpoint(document_text: str, prompt_text: str, max_length: int, url=None) -> str:
     """
     Sends a request to the API endpoint and returns the response.
 
     Args:
-        document_path (str): Path to the document.
+        document_text (str): Text of the document.
         prompt_text (str): The prompt text to be used for processing.
         max_length (int): Maximum length of the generated text.
+        url (str, optional): URL of the API endpoint. Defaults to a predefined URL.
 
     Returns:
-        str: The generated text from the API.
+        str: The generated text from the API, or an error message if a timeout occurs.
     """
-    #with open(document_path, 'r') as doc_file:
-    #    document_text = doc_file.read()
-    
-    url = "http://ece-nebula09.eng.uwaterloo.ca:8000/generate"
+    if url is None:
+        url = "http://ece-nebula09.eng.uwaterloo.ca:8000/generate"
     headers = {"Content-Type": "application/json"}
     data = {
         "prompt": f"{prompt_text}\n{document_text}",
         "max_length": max_length
     }
     
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    response.raise_for_status()  # Raise an exception for HTTP errors
-    return response.json()['response']
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(data), timeout=100)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        return response.json()['response']
+    except Timeout:
+        return "Timeout occurred, please try again later."
 
-def phi_moe_api_text_text_endpoint(document_text: str, prompt_text: str, max_length: int) -> str:
+def phi_moe_api_text_text_endpoint(document_text: str, prompt_text: str, max_length: int,url: str = None) -> str:
     """
     Sends a request to the API endpoint and returns the response.
-
-    Args:
-        document_text (str): The document text to be processed.
-        prompt_text (str): The prompt text to be used for processing.
-        max_length (int): Maximum length of the generated text.
-
-    Returns:
-        str: The generated text from the API.
-    """
-    url = "http://ece-nebula16.eng.uwaterloo.ca:8000/generate"
-    headers = {"Content-Type": "application/json"}
-    data = {
-        "prompt": f"{prompt_text}\n{document_text}",
-        "max_length": max_length
-    }
     
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    response.raise_for_status()  # Raise an exception for HTTP errors
-    
-    # Parse the JSON response
-    response_json = response.json()['response']
-    #generated_text = response_json.get("response", "").strip()
-
-    return response_json
-
-def qwen_api_text_text_endpoint(document_text: str, prompt_text: str, max_length: int) -> str:
-    """
-    Sends a request to the API endpoint and returns the response.
+    In fact this goes to qwen, not phi
 
     Args:
         document_text (str): The document text to be processed.
@@ -82,23 +64,137 @@ def qwen_api_text_text_endpoint(document_text: str, prompt_text: str, max_length
     Returns:
         str: The generated text from the API.
     """
-    url = "http://ece-nebula04.eng.uwaterloo.ca:8000/generate"
+    if url is None:
+        url = "http://ece-nebula16.eng.uwaterloo.ca:8000/generate"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "prompt": f"{prompt_text}\n{document_text}",
+        "max_length": max_length
+    }
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(data),timeout=100)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        
+        # Parse the JSON response
+        response_json = response.json()['response']
+        return response_json
+    #generated_text = response_json.get("response", "").strip()
+    except:
+        return "Timeout occurred, please try again later."
+
+def qwen_api_text_text_endpoint(document_text: str, prompt_text: str, max_length: int,url=None) -> str:
+    """
+    Sends a request to the API endpoint and returns the response. This also goes to qwen
+
+    Args:
+        document_text (str): The document text to be processed.
+        prompt_text (str): The prompt text to be used for processing.
+        max_length (int): Maximum length of the generated text.
+
+    Returns:
+        str: The generated text from the API.
+    """
+    if url is None:
+        url = "http://ece-nebula16.eng.uwaterloo.ca:8000/generate"#course.other_course_settings.get("qwenUrl")
+    #return url
+    #"http://ece-nebula16.eng.uwaterloo.ca:8000/generate"
     headers = {"Content-Type": "application/json"}
     data = {
         "prompt": f"{prompt_text}\n{document_text}",
         "max_length": max_length
     }
     
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    response.raise_for_status()  # Raise an exception for HTTP errors
-    
-    # Parse the JSON response
-    response_json = response.json()['response']
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(data),timeout=100)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        
+        # Parse the JSON response
+        response_json = response.json()['response']
+        return response_json
     #generated_text = response_json.get("response", "").strip()
+    except:
+        return "Timeout occurred, please try again later."
 
-    return response_json
+
+def get_chat_completion(
+    document_text: str,
+    prompt_text: str,
+    model: str = "gpt-4",
+    max_length: int = 512,
+    api_key: str = None
+) -> str:
+    """
+    Sends a request to the OpenAI Chat API and returns the response.
+
+    Args:
+        document_text (str): The document text to be sent to the API.
+        prompt_text (str): The prompt text for generating completion.
+        model (str): The model to use (default is "gpt-4").
+        max_length (int): The maximum number of tokens to generate.
+        api_key (str): The API key for authentication.
+ 
+    Returns:
+        str: The generated chat completion or an error message if a timeout occurs.
+    """
+    if api_key is None:
+        raise ValueError("No API Key is provided. Please supply a valid API key.")
+
+    api_url = "https://api.openai.com/v1/chat/completions"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
+
+    data = {
+        "model": model,
+        "messages": [
+            {
+                "role": "user",
+                "content": f"{prompt_text}\n{document_text}",
+            }
+        ],
+        "max_tokens": max_length
+    }
+
+    try:
+        response = requests.post(api_url, headers=headers, data=json.dumps(data), timeout=100)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        return response.json()["choices"][0]["message"]["content"]
+    except Timeout:
+        return "Timeout occurred, please try again later."
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"An error occurred while making the request: {e}")
+
+def openAI_text_text_endpoint(document_text: str, prompt_text: str, url: str = None,model="gpt-4o",max_length: int = 512,api_key:str = None) -> dict:
+    if api_key is None:
+        return "No API Key is present" #this shoudl literally never happen
+    client = OpenAI(api_key=api_key)
+    
+    headers = {
+      "Content-Type": "application/json",
+      "Authorization": f"Bearer {api_key}"
+    }
+    
+    response = client.chat.completions.create(
+    model=model,
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": f"{prompt_text}\n{document_text}"},
+            ],
+        }
+    ],
+    max_tokens=max_length,
+    )
+    # Ensure the response is in JSON format
+    #print(response)
+    response_data = response.choices[0].message.content
+    return response_data
+
 #Aggregates
-def text_text_eval(document_text:str,prompt_text: str,model: str = "nemo",max_length:int = 512,api_key = None) -> str:
+def text_text_eval(document_text:str,prompt_text: str,model: str = "nemo",max_length:int = 512,api_key = None,url=None) -> str:
     """
     Aggregates text generation from various API endpoints based on the specified model.
 
@@ -113,13 +209,13 @@ def text_text_eval(document_text:str,prompt_text: str,model: str = "nemo",max_le
         str: The generated text from the selected API.
     """
     if model == "gpt-4o-mini" or model == "gpt-4o":
-        return openAI_text_text_endpoint(document_text,prompt_text,max_length=max_length,model=model,api_key = api_key)
+        return get_chat_completion(document_text,prompt_text,max_length=max_length,model=model,api_key = api_key) #openAI_text_text_endpoint(document_text,prompt_text,max_length=max_length,model=model,api_key = api_key)
     elif model == "phi":
-        return phi_moe_api_text_text_endpoint(document_text,prompt_text,max_length)
+        return phi_moe_api_text_text_endpoint(document_text,prompt_text,max_length, url)
     elif model == "qwen":
-        return qwen_api_text_text_endpoint(document_text,prompt_text,max_length)
+        return qwen_api_text_text_endpoint(document_text,prompt_text,max_length, url)
     else:
-        return nebula_api_text_text_endpoint(document_text,prompt_text,max_length)
+        return nebula_api_text_text_endpoint(document_text,prompt_text,max_length, url)
 
 class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
         
@@ -127,6 +223,11 @@ class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
     question_description = String(
         help="Description of the question",
         default="",
+        scope=Scope.content
+    )
+    model_name = String(
+        help="Description of the question",
+        default="qwen",
         scope=Scope.content
     )
     
@@ -210,7 +311,16 @@ class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
         return data.decode("utf8")
     
     def studio_view(self, context):
-        html = self.render_template("static/html/grading_xblock_studio.html",{'self':self,"question":self.question_description})
+        print("********++++++++++**********++++++++++*******")
+        course = get_course_by_id(self.course_id)  # pylint: disable=no-member            
+        api_key = course.other_course_settings.get("openaiApiKey")
+        if api_key is not None:
+            model_names = ['qwen','nemo','gpt-4o','gpt-4o-mini']
+        else:
+            model_names = ['qwen','nemo']
+        print(course.other_course_settings.get("openaiApiKey"))
+        
+        html = self.render_template("static/html/grading_xblock_studio.html",{'self':self,"question":self.question_description,'model_names':model_names})
         frag = Fragment()
         frag.add_content(html)
         #frag = Fragment(html.format(self=self,question=self.question_description,random_thing=34))
@@ -227,6 +337,7 @@ class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
         
         self.question_description = data.get("question_description", "")
         self.rubric = data.get("rubric", [])
+        self.model_name = data.get("model_name", "qwen")  # Default to "qwen" if not provided
         self.raw_possible = self.max_score() #update this here
         return {"result": "success"}
 
@@ -266,7 +377,15 @@ class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
         """
 
         # Call the external evaluation function
-        evaluation_string = text_text_eval(document_text=student_answer, prompt_text=prompt, model='qwen', max_length=1024)
+        course = get_course_by_id(self.course_id)  # pylint: disable=no-member            
+        openaiApiKey = course.other_course_settings.get("openaiApiKey") #works even if it's None
+        if self.model_name == "qwen":
+            url = course.other_course_settings.get("qwenUrl")
+        elif self.model_name == "phi":
+            url = course.other_course_settings.get("phiUrl")
+        else:
+            url = course.other_course_settings.get("nemoUrl")
+        evaluation_string = text_text_eval(document_text=student_answer, prompt_text=prompt, model=self.model_name, api_key = openaiApiKey, max_length=1024,url=url)
         print("============================="+evaluation_string)
         #extract the label
         label_match = re.search(r"<label>(.*?)</label>", evaluation_string)
