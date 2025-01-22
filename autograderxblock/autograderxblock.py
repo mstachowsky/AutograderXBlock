@@ -8,7 +8,7 @@ from xblock.scorable import ScorableXBlockMixin, Score
 from xblock.fields import Integer, Scope, String, List, Float
 from django.template import Context, Template
 from requests.exceptions import Timeout
-
+from submissions import api as submissions_api
 import os
 import requests
 import json
@@ -231,6 +231,8 @@ class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
         scope=Scope.content
     )
     
+    submitted_answer = String(default="",scope=Scope.user_state)
+    answer_evaluation = String(default="",scope=Scope.user_state)
     # TO-DO: delete count, and define your own fields.
     
     raw_earned = Float(
@@ -411,10 +413,12 @@ class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
         #    'value': grade,
         #    'max_value': 100,
         #})
-            
-        self.raw_earned = grade #set the student's grade
-        self.student_score = grade
-        self.publish_grade()
+        #print(self.state)    
+        
+        #Using data.get did not work twice, but I can just store the strings directly
+        self.submitted_answer = student_answer#data.get("student_answer","")
+        self.answer_evaluation = evaluation_string
+        
         return {
             "evaluation": "GOAT!" + evaluation_string
         }
