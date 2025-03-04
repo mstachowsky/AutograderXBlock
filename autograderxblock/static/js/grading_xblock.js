@@ -50,7 +50,8 @@ function GradingXBlockStudent(runtime, element) {
         };
         var handlerUrl = runtime.handlerUrl(element, 'grade_submission');
         $.post(handlerUrl, JSON.stringify(data)).done(function(response) {
-            $('#evaluation').text(response.evaluation);
+            //$('#evaluation').text(response.evaluation);
+			$('#evaluation').text("Response received!");
             // Update grade display here if needed
         });
     };

@@ -5,7 +5,9 @@ import pkg_resources
 from web_fragments.fragment import Fragment
 from xblock.core import XBlock
 from xblock.scorable import ScorableXBlockMixin, Score
-from xblock.fields import Integer, Scope, String, List, Float
+from xblock.fields import Integer, Scope, String, List, Float, Boolean
+from xblockutils.settings import XBlockWithSettingsMixin #needed to enable settings
+from xblockutils.studio_editable import StudioEditableXBlockMixin #needed to show the settings modal
 from django.template import Context, Template
 from requests.exceptions import Timeout
 from submissions import api as submissions_api
@@ -217,8 +219,17 @@ def text_text_eval(document_text:str,prompt_text: str,model: str = "nemo",max_le
     else:
         return nebula_api_text_text_endpoint(document_text,prompt_text,max_length, url)
 
-class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
-        
+class AutograderXBlock(XBlock,ScorableXBlockMixin,XBlockWithSettingsMixin,StudioEditableXBlockMixin): #inherit from Scorable...
+
+    #Adding in a random string setting that does nothing at the moment
+    random_string_setting = String(
+    help="Model used for grading",
+    default="qwen",
+    scope=Scope.settings  # Change this from Scope.content to Scope.settings
+    )
+    
+    editable_fields = ['random_string_setting']
+    
     #question_description = String(default="Enter the question description here", scope=Scope.settings)
     question_description = String(
         help="Description of the question",
@@ -231,6 +242,16 @@ class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
         scope=Scope.content
     )
     
+    show_feedback = Boolean(
+        help="Toggle to show or hide feedback",
+        default=True,  # Set the default value (adjust as needed)
+        scope=Scope.content
+    )
+    show_label = Boolean(
+        help="Toggle to show or hide the rubric label",
+        default=True,  # Set the default value (adjust as needed)
+        scope=Scope.content
+    )
     submitted_answer = String(default="",scope=Scope.user_state)
     answer_evaluation = String(default="",scope=Scope.user_state)
     # TO-DO: delete count, and define your own fields.
@@ -267,6 +288,10 @@ class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
     
     @property
     def has_score(self):
+        return True
+    @staticmethod
+    def needs_configuration():
+        """Indicates that this XBlock has settings that should be configured in Studio."""
         return True
 
     def max_score(self):
@@ -322,7 +347,7 @@ class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
             model_names = ['qwen','nemo']
         print(course.other_course_settings.get("openaiApiKey"))
         
-        html = self.render_template("static/html/grading_xblock_studio.html",{'self':self,"question":self.question_description,'model_names':model_names})
+        html = self.render_template("static/html/grading_xblock_studio.html",{'self':self,"question":self.question_description,'model_names':model_names,'show_label':self.show_label,'show_feedback':self.show_feedback})
         frag = Fragment()
         frag.add_content(html)
         #frag = Fragment(html.format(self=self,question=self.question_description,random_thing=34))
@@ -341,16 +366,21 @@ class AutograderXBlock(XBlock,ScorableXBlockMixin): #inherit from Scorable...
         self.rubric = data.get("rubric", [])
         self.model_name = data.get("model_name", "qwen")  # Default to "qwen" if not provided
         self.raw_possible = self.max_score() #update this here
+        self.show_label = data.get("show_label",True)
+        self.show_feedback = data.get("show_feedback",True)
         return {"result": "success"}
 
     def student_view(self, context):
-        html = self.render_template("static/html/grading_xblock_student.html",{'self':self})
+        html = self.render_template("static/html/grading_xblock_student.html",{'self':self,'show_label':self.show_label,'show_feedback':self.show_feedback})
         frag = Fragment()
         frag.add_content(html)
         #frag = Fragment(html.format(self=self,question=self.question_description,random_thing=34))
         frag.add_css(self.resource_string("static/css/grading_xblock.css"))
         frag.add_javascript(self.resource_string("static/js/src/grading_xblock.js"))
-        frag.initialize_js('GradingXBlockStudent')
+        frag.initialize_js('GradingXBlockStudent', {
+        'show_label': self.show_label,
+        'show_feedback': self.show_feedback
+        })
         
         return frag
         #html = self.resource_string("static/html/grading_xblock_student.html")
