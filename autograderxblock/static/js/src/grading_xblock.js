@@ -95,7 +95,7 @@ function GradingXBlockStudent(runtime, element, data) {
             }
 			
 			if(!showFeedback && !showLabel){
-				$element.find('#evaluation .label').html('<strong>Submission Received!</strong> ');
+				$element.find('#evaluation .label').html('<strong>Submission Received!</strong>');
 			}
         });
     });
