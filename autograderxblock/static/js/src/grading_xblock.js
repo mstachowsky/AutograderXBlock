@@ -57,57 +57,13 @@ function GradingXBlockStudio(runtime, element) {
     });
 }
 
-function GradingXBlockStudent(runtime, element, data) {
-    var $element = $(element);
-	console.log(data)
-    // Access show_label and show_feedback from data attributes
-    var showLabel = data.show_label;
-    var showFeedback = data.show_feedback;
 
-    $element.find('#submit-answer').on('click', function() {
-        var dataToSend = {
-            'student_answer': $element.find('#student_answer').val()
-        };
-        var handlerUrl = runtime.handlerUrl(element, 'grade_submission');
-
-        $.post(handlerUrl, JSON.stringify(dataToSend)).done(function(response) {
-            console.log(response);
-
-            // Extract content from tags using regex
-            let evalString = response.evaluation;
-            let labelMatch = evalString.match(/<label>([\s\S]*?)<\/label>/);
-            let feedbackMatch = evalString.match(/<feedback>([\s\S]*?)<\/feedback>/);
-
-            let label = labelMatch ? labelMatch[1].trim() : '';
-            let feedback = feedbackMatch ? feedbackMatch[1].trim() : '';
-
-            // Update the DOM based on show_label and show_feedback settings
-            if (showLabel) {
-                $element.find('#evaluation .label').html('<strong>Label:</strong> ' + label);
-            } else {
-                $element.find('#evaluation .label').html('');
-            }
-
-            if (showFeedback) {
-                $element.find('#evaluation .feedback').html('<strong>Feedback:</strong> ' + feedback);
-            } else {
-                $element.find('#evaluation .feedback').html('');
-            }
-			
-			if(!showFeedback && !showLabel){
-				$element.find('#evaluation .label').html('<strong>Submission Received!</strong>');
-			}
-        });
-    });
-}
-
-/*
-function GradingXBlockStudent(runtime, element,data_bools) {
+function GradingXBlockStudent(runtime, element,data) {
     var $element = $(element);
 	 // Access show_label and show_feedback from data attributes
-    var showLabel = data_bools.show_label;
-    var showFeedback = data_bools.show_feedback;
-	console.log(data_bools)
+    var showLabel = data.show_label;
+    var showFeedback = data.show_feedback;
+	console.log(showLabel)
 	console.log(showFeedback)
     $element.find('#submit-answer').on('click', function() {
         var data = {
@@ -144,4 +100,4 @@ function GradingXBlockStudent(runtime, element,data_bools) {
 			//$element.find('#evaluation .feedback').html('<strong>Feedback:</strong> ' + feedback);
 		});
     });
-}*/
+}
